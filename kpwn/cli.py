@@ -41,6 +41,7 @@ def weapon():
     print("[+] try to get weapon")
     destination = os.path.join(template_path, "weapon")
     try:
+        subprocess.run(['rm', '-rf', destination])
         subprocess.run(['git', 'clone', repo_url, destination], check=True)
         print(f'Successfully cloned {repo_url} into {destination}.')
     except subprocess.CalledProcessError as e:
