@@ -25,9 +25,9 @@ def create(filename):
     os.makedirs(os.path.join(pwd, filename))
     os.makedirs(os.path.join(pwd, filename, "exploit")) # exp目录
     os.makedirs(os.path.join(pwd, filename, "challenge")) # 题目目录
-    os.symlink(os.path.join(pwd, filename, "tools"), os.path.join(template_path, "tools")) # 软链接
-    os.symlink(os.path.join(pwd, filename, "templates"), os.path.join(template_path, "templates")) # 软链接
-    os.symlink(os.path.join(pwd, filename, "src"), os.path.join(template_path, "src")) # 软链接
+    os.symlink(os.path.join(template_path, "tools"), os.path.join(pwd, filename, "tools")) # 软链接
+    os.symlink(os.path.join(template_path, "templates"), os.path.join(pwd, filename, "templates")) # 软链接
+    os.symlink(os.path.join(template_path, "src"), os.path.join(pwd, filename, "src")) # 软链接
     print("[+] create kpwn environ successs")
 
 def main():
