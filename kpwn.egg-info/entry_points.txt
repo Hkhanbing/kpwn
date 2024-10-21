@@ -1,0 +1,2 @@
+[console_scripts]
+kpwn = kpwn.cli:main

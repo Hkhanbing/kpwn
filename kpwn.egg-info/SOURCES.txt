@@ -1,0 +1,8 @@
+setup.py
+kpwn/__init__.py
+kpwn/cli.py
+kpwn.egg-info/PKG-INFO
+kpwn.egg-info/SOURCES.txt
+kpwn.egg-info/dependency_links.txt
+kpwn.egg-info/entry_points.txt
+kpwn.egg-info/top_level.txt
