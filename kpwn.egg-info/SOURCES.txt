@@ -1,6 +1,8 @@
+README.md
 setup.py
 kpwn/__init__.py
 kpwn/cli.py
+kpwn/utils.py
 kpwn.egg-info/PKG-INFO
 kpwn.egg-info/SOURCES.txt
 kpwn.egg-info/dependency_links.txt
