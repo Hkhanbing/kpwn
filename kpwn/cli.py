@@ -5,6 +5,7 @@ import fnmatch
 import magic
 import subprocess
 from kpwn.utils import *
+import shutil
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 repo_url = "https://github.com/Hkhanbing/kpwn_weapon.git"
@@ -47,9 +48,17 @@ def weapon():
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
         exit(1)
-    subprocess.run(['cp', '-r', os.path.join(destination, 'templates', "*"), os.path.join(template_path, 'templates')],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(['cp', '-r', os.path.join(destination, 'tools', "*"), os.path.join(template_path, 'tools')])
+    # 复制 templates 目录
+    templates_src = os.path.join(destination, 'templates')
+    templates_dst = os.path.join(template_path, 'templates')
+    if os.path.exists(templates_src):
+        shutil.copytree(templates_src, templates_dst, dirs_exist_ok=True)  # 复制目录
+
+    # 复制 tools 目录
+    tools_src = os.path.join(destination, 'tools')
+    tools_dst = os.path.join(template_path, 'tools')
+    if os.path.exists(tools_src):
+        shutil.copytree(tools_src, tools_dst, dirs_exist_ok=True)  # 复制目录
     print("[+] weapon up to date")
 
 # prepare local
