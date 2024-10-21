@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-template_path = "~/.kpwn.d"
+template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 
 # 创建框架 create的时候可以软链接
 def init():
@@ -55,7 +55,7 @@ def main():
 
     if args.command == 'init':
         init()
-    if args.command == 'create':
+    elif args.command == 'create':
         create(args.filename)
     else:
         parser.print_help()
