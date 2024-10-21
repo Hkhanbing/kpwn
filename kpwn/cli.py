@@ -48,6 +48,7 @@ def weapon():
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
         exit(1)
+
     # 检查源文件夹是否存在
     if not os.path.exists(destination):
         print(f"Source folder '{destination}' does not exist.")
@@ -57,23 +58,31 @@ def weapon():
     if not os.path.exists(template_path):
         os.makedirs(template_path)
 
-    # 遍历源文件夹中的所有文件
-    for item in os.listdir(destination):
-        source_item = os.path.join(destination, item)
-        target_item = os.path.join(template_path, item)
+    # 深层次遍历源文件夹中的所有文件和文件夹
+    for root, dirs, files in os.walk(destination):
+        for file in files:
+            source_file = os.path.join(root, file)
+            # 计算目标文件的相对路径
+            relative_path = os.path.relpath(source_file, destination)
+            target_file = os.path.join(template_path, relative_path)
 
-        # 仅在源是文件时执行复制操作
-        if os.path.isfile(source_item):
+            # 确保目标目录存在
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
             # 复制文件到目标文件夹，覆盖已存在的文件
-            shutil.copy2(source_item, target_item)
-            print(f"Copied '{source_item}' to '{target_item}'.")
+            shutil.copy2(source_file, target_file)
+            print(f"Copied '{source_file}' to '{target_file}'.")
 
-        # 如果需要，也可以处理目录
-        elif os.path.isdir(source_item):
-            target_subfolder = os.path.join(template_path, item)
-            # 递归复制子目录
-            shutil.copytree(source_item, target_subfolder, dirs_exist_ok=True)
-            print(f"Copied directory '{source_item}' to '{target_subfolder}'.")
+        for dir in dirs:
+            source_dir = os.path.join(root, dir)
+            # 计算目标目录的相对路径
+            relative_dir = os.path.relpath(source_dir, destination)
+            target_dir = os.path.join(template_path, relative_dir)
+
+            # 确保目标目录存在
+            os.makedirs(target_dir, exist_ok=True)
+            print(f"Ensured directory '{target_dir}' exists.")
+
+    print("[+] weapon is up to date")
 
 # prepare local
 def local(filename):
