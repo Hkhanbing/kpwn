@@ -47,8 +47,9 @@ def weapon():
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
         exit(1)
-    subprocess.run(['cp', '-r', os.path.join(destination, "*"), os.path.join(template_path)], # cp -r ~/.kpwn.d/weapon/* ~/.kpwn.d/
+    subprocess.run(['cp', '-r', os.path.join(destination, 'templates', "*"), os.path.join(template_path, 'templates')],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(['cp', '-r', os.path.join(destination, 'tools', "*"), os.path.join(template_path, 'tools')])
     print("[+] weapon up to date")
 
 # prepare local
