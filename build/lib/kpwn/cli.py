@@ -5,6 +5,7 @@ import fnmatch
 import magic
 import subprocess
 from kpwn.utils import *
+import shutil
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 repo_url = "https://github.com/Hkhanbing/kpwn_weapon.git"
@@ -41,11 +42,38 @@ def weapon():
     print("[+] try to get weapon")
     destination = os.path.join(template_path, "weapon")
     try:
+        subprocess.run(['rm', '-rf', destination])
         subprocess.run(['git', 'clone', repo_url, destination], check=True)
         print(f'Successfully cloned {repo_url} into {destination}.')
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
-    print("[+] weapon up to date")
+        exit(1)
+    # 检查源文件夹是否存在
+    if not os.path.exists(destination):
+        print(f"Source folder '{destination}' does not exist.")
+        return
+
+    # 检查目标文件夹是否存在，如果不存在则创建
+    if not os.path.exists(template_path):
+        os.makedirs(template_path)
+
+    # 遍历源文件夹中的所有文件
+    for item in os.listdir(destination):
+        source_item = os.path.join(destination, item)
+        target_item = os.path.join(template_path, item)
+
+        # 仅在源是文件时执行复制操作
+        if os.path.isfile(source_item):
+            # 复制文件到目标文件夹，覆盖已存在的文件
+            shutil.copy2(source_item, target_item)
+            print(f"Copied '{source_item}' to '{target_item}'.")
+
+        # 如果需要，也可以处理目录
+        elif os.path.isdir(source_item):
+            target_subfolder = os.path.join(template_path, item)
+            # 递归复制子目录
+            shutil.copytree(source_item, target_subfolder, dirs_exist_ok=True)
+            print(f"Copied directory '{source_item}' to '{target_subfolder}'.")
 
 # prepare local
 def local(filename):

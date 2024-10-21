@@ -48,18 +48,32 @@ def weapon():
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
         exit(1)
-    # 复制 templates 目录
-    templates_src = os.path.join(destination, 'templates')
-    templates_dst = os.path.join(template_path, 'templates')
-    if os.path.exists(templates_src):
-        shutil.copytree(templates_src, templates_dst, dirs_exist_ok=True)  # 复制目录
+    # 检查源文件夹是否存在
+    if not os.path.exists(destination):
+        print(f"Source folder '{destination}' does not exist.")
+        return
 
-    # 复制 tools 目录
-    tools_src = os.path.join(destination, 'tools')
-    tools_dst = os.path.join(template_path, 'tools')
-    if os.path.exists(tools_src):
-        shutil.copytree(tools_src, tools_dst, dirs_exist_ok=True)  # 复制目录
-    print("[+] weapon up to date")
+    # 检查目标文件夹是否存在，如果不存在则创建
+    if not os.path.exists(template_path):
+        os.makedirs(template_path)
+
+    # 遍历源文件夹中的所有文件
+    for item in os.listdir(destination):
+        source_item = os.path.join(destination, item)
+        target_item = os.path.join(template_path, item)
+
+        # 仅在源是文件时执行复制操作
+        if os.path.isfile(source_item):
+            # 复制文件到目标文件夹，覆盖已存在的文件
+            shutil.copy2(source_item, target_item)
+            print(f"Copied '{source_item}' to '{target_item}'.")
+
+        # 如果需要，也可以处理目录
+        elif os.path.isdir(source_item):
+            target_subfolder = os.path.join(template_path, item)
+            # 递归复制子目录
+            shutil.copytree(source_item, target_subfolder, dirs_exist_ok=True)
+            print(f"Copied directory '{source_item}' to '{target_subfolder}'.")
 
 # prepare local
 def local(filename):
