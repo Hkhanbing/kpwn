@@ -197,9 +197,14 @@ def debug(break_point):
     
     # 使用 tmux wait-for 等待用户确认
     print("[+] waiting for endline")
-    subprocess.run([
+    result = subprocess.run([
         "tmux", "send-keys", "-t", f"{session_name}:0.1",
-        "echo 'Press Enter to attach GDB...'; read; gdb -x ./exploit/command.gdb", "C-m"
+        f"echo 'Press Enter to attach GDB...'; \
+            read; \
+            tmux send-keys -t {session_name}:0.0 'lsmod';\
+            tmux capture-pane -t kpwn-debug:0.0; \
+            tmux wait-for -S user-input", # 取消阻塞
+            "C-m"
     ])
 
     # 附加到 tmux 会话
@@ -209,6 +214,17 @@ def debug(break_point):
         print(f"[-] attach tmux error: {e}")
     finally:
         cleanup_tmux(session_name)
+
+    # 阻塞
+    subprocess.run(["tmux", "wait-for", "user-input"])
+    # get output
+    result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", 
+        "tmux show-buffer"
+    ], capture_output=True, text=True)
+
+    # 将结果赋值给变量
+    lsmod_output = result.stdout.strip()
+    print(f"[+] lsmod output:\n{lsmod_output}")
 
     print("[+] tmux 会话已启动")
 
