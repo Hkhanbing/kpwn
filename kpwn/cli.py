@@ -202,8 +202,22 @@ def debug(break_point):
     print("[+] tmux started")
     #TODO : sh add command lsmod to get addr for my breakpoint & gdb load-symbol-file
 
-#TODO : change rootfs/init to get root & disabled timeout shutdown
 def switch():
+    print("[+] start to change uid")
+    with open("./rootfs/init", "r") as f:
+        file_data = f.read()
+
+    setuidgid_offset = file_data.find("setuidgid")
+    setuidgid_end = file_data[setuidgid_offset+10:].find(" ")
+
+    #print(file_data[setuidgid_offset+10: setuidgid_offset+10+setuidgid_end])
+    file_data = file_data.replace(file_data[setuidgid_offset: setuidgid_offset+10+setuidgid_end], "setuidgid 0")
+
+    with open("./rootfs/init") as f:
+        f.write(file_data)
+    print("[+] change uid success")
+    build_rootfs()
+    # print(file_data)
     return
 
 #: change own files build rootfs
