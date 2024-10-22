@@ -207,7 +207,7 @@ def run_tmux_commands(session_name):
         print("[-] get section addr error")
         return
     
-    next_offset = file_data.find("\n", offset) + 1
+    next_offset = file_data.find(".bss", offset) + 4 + 1
     text_end = file_data.find("\n", next_offset)
     text_addr = file_data[next_offset: text_end].strip()
     next_offset = file_data.find("\n", text_end) + 1
