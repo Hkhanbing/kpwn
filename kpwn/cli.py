@@ -200,6 +200,8 @@ def run_tmux_commands(session_name):
     # get output
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
         "sleep 0.2; tmux capture-pane -t kpwn-debug:0.0; tmux show-buffer > ./exploit/tmux_buf.txt", "C-m"])
+    
+    time.sleep(0.5)
     with open("./exploit/tmux_buf.txt", "r") as f:
         file_data = f.read()
     
