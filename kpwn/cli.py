@@ -7,6 +7,7 @@ import subprocess
 from kpwn.utils import *
 import shutil
 import signal
+import threading
 import time
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
@@ -156,6 +157,25 @@ def local(filename):
             f.write("gzip: 0\n")
     print("[+] config file build finish")
 
+def run_tmux_commands(session_name):
+    print("[+] start to block")
+    # 阻塞等待 user-input 信号
+    subprocess.run(["tmux", "wait-for", "user-input"])
+    print("[+] end block")
+
+    # 在指定 pane 中发送命令
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                    "echo 'waiting for show-buffer...'", "C-m"])
+
+    # 执行 `tmux show-buffer` 并捕获输出
+    result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                             "tmux show-buffer", "C-m"],
+                            capture_output=True, text=True)
+
+    # 将结果赋值给变量
+    lsmod_output = result.stdout.strip()
+    print(f"[+] lsmod output:\n{lsmod_output}")
+
 def debug(break_point):
     print("[+] debug")
 
@@ -207,6 +227,8 @@ def debug(break_point):
             "C-m"
     ])
 
+    tmux_thread = threading.Thread(target=run_tmux_commands, args=(session_name,))
+    tmux_thread.start()
     # 附加到 tmux 会话
     try:
         subprocess.run(["tmux", "attach", "-t", session_name])
@@ -214,22 +236,6 @@ def debug(break_point):
         print(f"[-] attach tmux error: {e}")
     finally:
         cleanup_tmux(session_name)
-
-    # 阻塞
-    print("[+] start to block")
-    subprocess.run(["tmux", "wait-for", "user-input"])
-    print("[+] end block")
-    # get output
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
-        "echo 'waiting for show-buffer...'", "C-m"])
-    
-    result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", 
-        "tmux show-buffer", "C-m"
-    ], capture_output=True, text=True)
-
-    # 将结果赋值给变量
-    lsmod_output = result.stdout.strip()
-    print(f"[+] lsmod output:\n{lsmod_output}")
 
     print("[+] tmux 会话已启动")
 
