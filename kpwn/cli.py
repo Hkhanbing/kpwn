@@ -191,6 +191,50 @@ def run_tmux_commands(session_name):
     print(f"[+] module addr: {module_addr}")
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
                     f"echo 'module addr found: {module_name} {module_addr}'", "C-m"])
+    # next get section addr
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
+                    f"cat /sys/module/{module_name}/sections/.text; cat /sys/module/{module_name}/sections/.data; cat /sys/module/{module_name}/sections/.bss;", 
+                    "C-m"])
+    # get output
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+        "sleep 0.2; tmux capture-pane -t kpwn-debug:0.0; tmux show-buffer > ./exploit/tmux_buf.txt", "C-m"])
+    with open("./exploit/tmux_buf.txt", "r") as f:
+        file_data = f.read()
+    offset = file_data.find(f"cat /sys/module/")
+    if offset == -1:
+        print("[-] get section addr error")
+        return
+    
+    next_offset = file_data.find("\n", offset) + 1
+    text_end = file_data.find("\n", next_offset)
+    text_addr = file_data[next_offset: text_end].strip()
+    next_offset = file_data.find("\n", text_end) + 1
+    data_end = file_data.find("\n", next_offset)
+    data_addr = file_data[next_offset: data_end].strip()
+    next_offset = file_data.find("\n", data_end) + 1
+    bss_end = file_data.find("\n", next_offset)
+    bss_addr = file_data[next_offset: bss_end].strip()
+
+    print(f"[+] text addr: {text_addr}")
+    print(f"[+] data addr: {data_addr}")
+    print(f"[+] bss addr: {bss_addr}")
+
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                    f"echo 'module text addr found: {text_addr}'", "C-m"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                    f"echo 'module data addr found: {data_addr}'", "C-m"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                    f"echo 'module bss addr found: {bss_addr}'", "C-m"])
+
+    # # start gdb
+    # subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+    #             f"gdb -x ./exploit/command.gdb", "C-m"])
+    # # load file symbol
+    # subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+    #                 f"gdb -x ./exploit/command.gdb", "C-m"])
+
+
+
 
 
 def debug(break_point):
@@ -239,7 +283,7 @@ def debug(break_point):
         f"echo 'Press Enter to attach GDB...'; \
             read; \
             tmux send-keys -t {session_name}:0.0 'lsmod' C-m;\
-            sleep 0.5; \
+            sleep 0.2; \
             tmux capture-pane -t kpwn-debug:0.0; \
             tmux wait-for -S user-input", # 取消阻塞
             "C-m"
