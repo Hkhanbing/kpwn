@@ -221,6 +221,7 @@ def debug(break_point):
         f"echo 'Press Enter to attach GDB...'; \
             read; \
             tmux send-keys -t {session_name}:0.0 'lsmod' C-m;\
+            sleep 0.5;
             tmux capture-pane -t kpwn-debug:0.0; \
             tmux wait-for -S user-input", # 取消阻塞
             "C-m"
