@@ -150,10 +150,10 @@ def local(filename):
         
     with open("config", "w") as f:
         f.write(config_data)
-    if(flag_is_gzip):
-        f.write("gzip: 1\n")
-    else:
-        f.write("gzip: 0\n")
+        if(flag_is_gzip):
+            f.write("gzip: 1\n")
+        else:
+            f.write("gzip: 0\n")
     print("[+] config file build finish")
 
 def debug(break_point):
