@@ -195,7 +195,7 @@ def run_tmux_commands(session_name):
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
                     f"cat /sys/module/{module_name}/sections/.text; \
                     cat /sys/module/{module_name}/sections/.data; \
-                    cat /sys/module/{module_name}/sections/.bss;", 
+                    cat /sys/module/{module_name}/sections/.bss", 
                     "C-m"])
     # get output
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
