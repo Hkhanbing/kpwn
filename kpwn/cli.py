@@ -196,8 +196,11 @@ def debug(break_point):
             f.write(f"target remote localhost:1234\n")
     
     # 使用 tmux wait-for 等待用户确认
-    print("[+] 等待用户在 sh 窗口中输入")
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", "echo 'Press enter to attach GDB...'", "C-m"])
+    print("[+] waiting for endline")
+    subprocess.run([
+        "tmux", "send-keys", "-t", f"{session_name}:0.1",
+        "echo 'Press Enter to attach GDB...'; read; gdb -x ./exploit/command.gdb", "C-m"
+    ])
 
     # 附加到 tmux 会话
     try:
@@ -208,11 +211,6 @@ def debug(break_point):
         cleanup_tmux(session_name)
 
     print("[+] tmux 会话已启动")
-
-    subprocess.run(["tmux", "wait-for", "user-input"])  # 等待用户发出信号
-
-    # 在 GDB 窗口中执行 attach
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", f"gdb -x {gdb_commands}", "C-m"])
 
     # 捕捉信号确保退出时关闭 tmux
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, session_name))
