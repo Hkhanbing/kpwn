@@ -162,7 +162,7 @@ def debug(break_point):
         file_data = f.read()
     offset = file_data.find("boot: ")
     end = file_data[offset:].find("\n", offset)
-    boot_file = file_data[offset + 6:end]
+    boot_file = file_data[offset + 6: offset+end] # fix
     print(f"[+] boot file: {boot_file}")
     subprocess.run(["chmod", "+x", f"{os.path.join('challenge', boot_file)}"])
     # start tmux
@@ -206,13 +206,13 @@ def debug(break_point):
 def switch():
     return
 
-#TODO : change own files build rootfs
+#: change own files build rootfs
 def build_rootfs():
     with open("config", "r") as f:
         file_data = f.read()
     offset = file_data.find("gzip: ")
     end = file_data[offset:].find("\n", offset)
-    Is_gzip = file_data[offset + 5:end]
+    Is_gzip = file_data[offset + 5: offset+end] # fix
     os.chdir(os.path.join('rootfs'))  # 切换工作目录
     os.system("find . | cpio -o -H newc > core.cpio")
     if(Is_gzip == '1'):
