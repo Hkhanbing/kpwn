@@ -168,13 +168,12 @@ def run_tmux_commands(session_name):
                     "echo 'waiting for show-buffer...'", "C-m"])
 
     # 执行 `tmux show-buffer` 并捕获输出
-    result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
-                             "tmux show-buffer", "C-m"],
-                            capture_output=True, text=True)
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+        "tmux show-buffer > ./exploit/tmux_buf.txt", "C-m"])
 
     # 将结果赋值给变量
-    lsmod_output = result.stdout.strip()
-    print(f"[+] lsmod output:\n{lsmod_output}")
+    # lsmod_output = result.stdout.strip()
+    # print(f"[+] lsmod output:\n{lsmod_output}")
 
 def debug(break_point):
     print("[+] debug")
