@@ -150,7 +150,10 @@ def local(filename):
         
     with open("config", "w") as f:
         f.write(config_data)
-
+    if(flag_is_gzip):
+        f.write("gzip: 1\n")
+    else:
+        f.write("gzip: 0\n")
     print("[+] config file build finish")
 
 def debug(break_point):
@@ -158,7 +161,7 @@ def debug(break_point):
     with open("config", "r") as f:
         file_data = f.read()
     offset = file_data.find("boot: ")
-    end = file_data.find("\n", offset)
+    end = file_data[offset:].find("\n", offset)
     boot_file = file_data[offset + 6:end]
     print(f"[+] boot file: {boot_file}")
     subprocess.run(["chmod", "+x", f"{os.path.join('challenge', boot_file)}"])
@@ -197,7 +200,28 @@ def debug(break_point):
         cleanup_tmux(session_name)
 
     print("[+] tmux started")
+    #TODO : sh add command lsmod to get addr for my breakpoint & gdb load-symbol-file
 
+#TODO : change rootfs/init to get root & disabled timeout shutdown
+def switch():
+    return
+
+#TODO : change own files build rootfs
+def build_rootfs():
+    with open("config", "r") as f:
+        file_data = f.read()
+    offset = file_data.find("gzip: ")
+    end = file_data[offset:].find("\n", offset)
+    Is_gzip = file_data[offset + 5:end]
+    os.chdir(os.path.join('rootfs'))  # 切换工作目录
+    os.system("find . | cpio -o -H newc > core.cpio")
+    if(Is_gzip == '1'):
+        os.system("gzip ./core.cpio")
+        os.system("mv ./core.cpio.gz ./core.cpio")
+    os.system("cp ./core.cpio ../challenge")
+    os.system("rm ./core.cpio")
+    print("[+] build rootfs success")
+    return
 
 def main():
     # 创建命令行解析器
@@ -224,6 +248,11 @@ def main():
     debug_parser = subparsers.add_parser('debug', help='kpwn debug')
     debug_parser.add_argument('b', nargs='?', default=None, help='kpwn debug b 0x1234')
 
+    # kpwn switch
+    switch_parser = subparsers.add_parser('switch', help='kpwn switch')
+
+    # kpwn build_rootfs
+    build_rootfs_parser = subparsers.add_parser('build', help='kpwn build')
     # 如果没有提供参数，则打印帮助信息
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -243,6 +272,10 @@ def main():
         weapon()
     elif args.command == 'debug':
         debug(args.b)
+    elif args.command == 'build':
+        build_rootfs()
+    elif args.command == 'switch':
+        switch()
     else:
         parser.print_help()
 
