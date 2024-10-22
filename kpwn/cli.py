@@ -7,6 +7,7 @@ import subprocess
 from kpwn.utils import *
 import shutil
 import signal
+import time
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 repo_url = "https://github.com/Hkhanbing/kpwn_weapon.git"
@@ -152,7 +153,7 @@ def local(filename):
 
     print("[+] config file build finish")
 
-def debug():
+def debug(break_point):
     print("[+] debug")
     with open("config", "r") as f:
         file_data = f.read()
@@ -173,7 +174,14 @@ def debug():
 
     # for gdb
     subprocess.run(["tmux", "split-window", "-h", "-t", f"{session_name}:0"])
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb", "C-m"])
+    # prepare command.gdb & attach remote
+    if not os.path.exists(os.path.join('exploit', 'command.gdb')):
+        print("[+] building exploit/command.gdb")
+        with open(os.path.join('exploit', 'command.gdb'), 'w') as f:
+            f.write(f"target remote localhost:1234\n")
+
+    time.sleep(2) # wait for sh
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb -x ./exploit/command.gdb", "C-m"])
 
     # 捕捉信号确保退出时关闭 tmux
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, session_name))
@@ -213,6 +221,7 @@ def main():
 
     # kpwn debug
     debug_parser = subparsers.add_parser('debug', help='kpwn debug')
+    debug_parser.add_argument('b', help='kpwn debug b 0x1234')
 
     # 如果没有提供参数，则打印帮助信息
     if len(sys.argv) == 1:
@@ -232,7 +241,7 @@ def main():
     elif args.command == 'weapon':
         weapon()
     elif args.command == 'debug':
-        debug()
+        debug(args.b)
     else:
         parser.print_help()
 
