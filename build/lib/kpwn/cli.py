@@ -6,6 +6,7 @@ import magic
 import subprocess
 from kpwn.utils import *
 import shutil
+import signal
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 repo_url = "https://github.com/Hkhanbing/kpwn_weapon.git"
@@ -48,6 +49,7 @@ def weapon():
     except subprocess.CalledProcessError as e:
         print(f'Error while cloning repository: {e}')
         exit(1)
+
     # 检查源文件夹是否存在
     if not os.path.exists(destination):
         print(f"Source folder '{destination}' does not exist.")
@@ -57,23 +59,31 @@ def weapon():
     if not os.path.exists(template_path):
         os.makedirs(template_path)
 
-    # 遍历源文件夹中的所有文件
-    for item in os.listdir(destination):
-        source_item = os.path.join(destination, item)
-        target_item = os.path.join(template_path, item)
+    # 深层次遍历源文件夹中的所有文件和文件夹
+    for root, dirs, files in os.walk(destination):
+        for file in files:
+            source_file = os.path.join(root, file)
+            # 计算目标文件的相对路径
+            relative_path = os.path.relpath(source_file, destination)
+            target_file = os.path.join(template_path, relative_path)
 
-        # 仅在源是文件时执行复制操作
-        if os.path.isfile(source_item):
+            # 确保目标目录存在
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
             # 复制文件到目标文件夹，覆盖已存在的文件
-            shutil.copy2(source_item, target_item)
-            print(f"Copied '{source_item}' to '{target_item}'.")
+            shutil.copy2(source_file, target_file)
+            print(f"Copied '{source_file}' to '{target_file}'.")
 
-        # 如果需要，也可以处理目录
-        elif os.path.isdir(source_item):
-            target_subfolder = os.path.join(template_path, item)
-            # 递归复制子目录
-            shutil.copytree(source_item, target_subfolder, dirs_exist_ok=True)
-            print(f"Copied directory '{source_item}' to '{target_subfolder}'.")
+        for dir in dirs:
+            source_dir = os.path.join(root, dir)
+            # 计算目标目录的相对路径
+            relative_dir = os.path.relpath(source_dir, destination)
+            target_dir = os.path.join(template_path, relative_dir)
+
+            # 确保目标目录存在
+            os.makedirs(target_dir, exist_ok=True)
+            print(f"Ensured directory '{target_dir}' exists.")
+
+    print("[+] weapon is up to date")
 
 # prepare local
 def local(filename):
@@ -142,6 +152,43 @@ def local(filename):
 
     print("[+] config file build finish")
 
+def debug():
+    print("[+] debug")
+    with open("config", "r") as f:
+        file_data = f.read()
+    offset = file_data.find("boot: ")
+    end = file_data.find("\n", offset)
+    boot_file = file_data[offset + 6:end]
+    print(f"[+] boot file: {boot_file}")
+    subprocess.run(["chmod", "+x", f"{os.path.join('challenge', boot_file)}"])
+    # start tmux
+    print(f"[+] starting tmux")
+    session_name = "kpwn-debug"
+    # 先切换challenge目录
+    subprocess.run(["tmux", "new-session", "-d", "-s", session_name])
+
+    # for sh
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", "cd ./challenge", "C-m"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", f"./{boot_file}", "C-m"])
+
+    # for gdb
+    subprocess.run(["tmux", "split-window", "-h", "-t", f"{session_name}:0"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb", "C-m"])
+
+    # 捕捉信号确保退出时关闭 tmux
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, session_name))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame, session_name))
+
+    # 附加到 tmux 会话
+    try:
+        subprocess.run(["tmux", "attach", "-t", session_name])
+    except Exception as e:
+        print(f"[-] attach tmux error: {e}")
+    finally:
+        cleanup_tmux(session_name)
+
+    print("[+] tmux started")
+
 
 def main():
     # 创建命令行解析器
@@ -164,6 +211,9 @@ def main():
     # kpwn weapon
     weapon_parser = subparsers.add_parser('weapon', help='kpwn weapon')
 
+    # kpwn debug
+    debug_parser = subparsers.add_parser('debug', help='kpwn debug')
+
     # 如果没有提供参数，则打印帮助信息
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -181,6 +231,8 @@ def main():
         local(args.dirname)
     elif args.command == 'weapon':
         weapon()
+    elif args.command == 'debug':
+        debug()
     else:
         parser.print_help()
 

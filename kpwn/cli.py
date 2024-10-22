@@ -6,6 +6,7 @@ import magic
 import subprocess
 from kpwn.utils import *
 import shutil
+import signal
 
 template_path = os.path.join(os.path.expanduser("~"), ".kpwn.d")
 repo_url = "https://github.com/Hkhanbing/kpwn_weapon.git"
@@ -151,6 +152,43 @@ def local(filename):
 
     print("[+] config file build finish")
 
+def debug():
+    print("[+] debug")
+    with open("config", "r") as f:
+        file_data = f.read()
+    offset = file_data.find("boot: ")
+    end = file_data.find("\n", offset)
+    boot_file = file_data[offset + 6:end]
+    print(f"[+] boot file: {boot_file}")
+    subprocess.run(["chmod", "+x", f"{os.path.join('challenge', boot_file)}"])
+    # start tmux
+    print(f"[+] starting tmux")
+    session_name = "kpwn-debug"
+    # 先切换challenge目录
+    subprocess.run(["tmux", "new-session", "-d", "-s", session_name])
+
+    # for sh
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", "cd ./challenge", "C-m"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", f"./{boot_file}", "C-m"])
+
+    # for gdb
+    subprocess.run(["tmux", "split-window", "-h", "-t", f"{session_name}:0"])
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb", "C-m"])
+
+    # 捕捉信号确保退出时关闭 tmux
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, session_name))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame, session_name))
+
+    # 附加到 tmux 会话
+    try:
+        subprocess.run(["tmux", "attach", "-t", session_name])
+    except Exception as e:
+        print(f"[-] attach tmux error: {e}")
+    finally:
+        cleanup_tmux(session_name)
+
+    print("[+] tmux started")
+
 
 def main():
     # 创建命令行解析器
@@ -173,6 +211,9 @@ def main():
     # kpwn weapon
     weapon_parser = subparsers.add_parser('weapon', help='kpwn weapon')
 
+    # kpwn debug
+    debug_parser = subparsers.add_parser('debug', help='kpwn debug')
+
     # 如果没有提供参数，则打印帮助信息
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -190,6 +231,8 @@ def main():
         local(args.dirname)
     elif args.command == 'weapon':
         weapon()
+    elif args.command == 'debug':
+        debug()
     else:
         parser.print_help()
 
