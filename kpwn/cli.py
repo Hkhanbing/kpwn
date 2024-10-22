@@ -216,8 +216,13 @@ def debug(break_point):
         cleanup_tmux(session_name)
 
     # 阻塞
+    print("[+] start to block")
     subprocess.run(["tmux", "wait-for", "user-input"])
+    print("[+] end block")
     # get output
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+        "echo 'waiting for show-buffer...'", "C-m"])
+    
     result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", 
         "tmux show-buffer", "C-m"
     ], capture_output=True, text=True)
