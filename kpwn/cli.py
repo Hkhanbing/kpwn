@@ -180,6 +180,7 @@ def debug(break_point):
         with open(os.path.join('exploit', 'command.gdb'), 'w') as f:
             f.write(f"target remote localhost:1234\n")
 
+    f.close()
     time.sleep(2) # wait for sh
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb -x ./exploit/command.gdb", "C-m"])
 
