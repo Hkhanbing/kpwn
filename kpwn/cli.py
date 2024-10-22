@@ -201,7 +201,7 @@ def debug(break_point):
         "tmux", "send-keys", "-t", f"{session_name}:0.1",
         f"echo 'Press Enter to attach GDB...'; \
             read; \
-            tmux send-keys -t {session_name}:0.0 'lsmod';\
+            tmux send-keys -t {session_name}:0.0 'lsmod' C-m;\
             tmux capture-pane -t kpwn-debug:0.0; \
             tmux wait-for -S user-input", # 取消阻塞
             "C-m"
@@ -219,7 +219,7 @@ def debug(break_point):
     subprocess.run(["tmux", "wait-for", "user-input"])
     # get output
     result = subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", 
-        "tmux show-buffer"
+        "tmux show-buffer", "C-m"
     ], capture_output=True, text=True)
 
     # 将结果赋值给变量
