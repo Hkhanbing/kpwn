@@ -158,34 +158,50 @@ def local(filename):
 
 def debug(break_point):
     print("[+] debug")
-    with open("config", "r") as f:
-        file_data = f.read()
+
+    # 读取配置文件并解析 boot 文件名
+    try:
+        with open("config", "r") as f:
+            file_data = f.read()
+    except FileNotFoundError:
+        print("[-] config 文件未找到")
+        return
+
     offset = file_data.find("boot: ")
-    end = file_data[offset:].find("\n", offset)
-    boot_file = file_data[offset + 6: offset+end] # fix
+    end = file_data.find("\n", offset)
+    boot_file = file_data[offset + 6: end].strip()
     print(f"[+] boot file: {boot_file}")
-    subprocess.run(["chmod", "+x", f"{os.path.join('challenge', boot_file)}"])
-    # start tmux
-    print(f"[+] starting tmux")
+
+    # 设置 boot 文件可执行权限
+    boot_path = os.path.join('challenge', boot_file)
+    subprocess.run(["chmod", "+x", boot_path])
+
+    # 启动 tmux 会话
     session_name = "kpwn-debug"
-    # 先切换challenge目录
+    print(f"[+] 启动 tmux 会话: {session_name}")
     subprocess.run(["tmux", "new-session", "-d", "-s", session_name])
 
-    # for sh
+    # 在第一个窗口中切换到 challenge 目录并运行 boot 文件
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", "cd ./challenge", "C-m"])
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", f"./{boot_file}", "C-m"])
 
-    # for gdb
+    # 在第二个窗口中准备 GDB 并等待 attach
     subprocess.run(["tmux", "split-window", "-h", "-t", f"{session_name}:0"])
-    # prepare command.gdb & attach remote
-    if not os.path.exists(os.path.join('exploit', 'command.gdb')):
-        print("[+] building exploit/command.gdb")
-        with open(os.path.join('exploit', 'command.gdb'), 'w') as f:
+    
+    # 创建 GDB 命令文件
+    gdb_commands = os.path.join('exploit', 'command.gdb')
+    if not os.path.exists(gdb_commands):
+        print("[+] 创建 exploit/command.gdb")
+        with open(gdb_commands, 'w') as f:
             f.write(f"target remote localhost:1234\n")
+    
+    # 使用 tmux wait-for 等待用户确认
+    print("[+] 等待用户在 sh 窗口中输入")
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0", "echo 'Press enter to attach GDB...'", "C-m"])
+    subprocess.run(["tmux", "wait-for", "user-input"])  # 等待用户发出信号
 
-    f.close()
-    time.sleep(2) # wait for sh
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", "gdb -x ./exploit/command.gdb", "C-m"])
+    # 在 GDB 窗口中执行 attach
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1", f"gdb -x {gdb_commands}", "C-m"])
 
     # 捕捉信号确保退出时关闭 tmux
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, session_name))
@@ -199,7 +215,7 @@ def debug(break_point):
     finally:
         cleanup_tmux(session_name)
 
-    print("[+] tmux started")
+    print("[+] tmux 会话已启动")
     #TODO : sh add command lsmod to get addr for my breakpoint & gdb load-symbol-file
 
 def switch():
@@ -208,10 +224,10 @@ def switch():
         file_data = f.read()
 
     setuidgid_offset = file_data.find("setuidgid")
-    setuidgid_end = file_data[setuidgid_offset+10:].find(" ")
+    setuidgid_end = file_data.find(" ", setuidgid_offset)
 
     #print(file_data[setuidgid_offset+10: setuidgid_offset+10+setuidgid_end])
-    file_data = file_data.replace(file_data[setuidgid_offset: setuidgid_offset+10+setuidgid_end], "setuidgid 0")
+    file_data = file_data.replace(file_data[setuidgid_offset: setuidgid_end], "setuidgid 0")
 
     with open("./rootfs/init", "w") as f:
         f.write(file_data)
@@ -225,8 +241,8 @@ def build_rootfs():
     with open("config", "r") as f:
         file_data = f.read()
     offset = file_data.find("gzip: ")
-    end = file_data[offset:].find("\n", offset)
-    Is_gzip = file_data[offset + 5: offset+end] # fix
+    end = file_data.find("\n", offset)
+    Is_gzip = file_data[offset + 6: end] # fix
     os.chdir(os.path.join('rootfs'))  # 切换工作目录
     os.system("find . | cpio -o -H newc > core.cpio")
     if(Is_gzip == '1'):
