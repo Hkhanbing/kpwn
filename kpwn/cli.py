@@ -202,6 +202,7 @@ def run_tmux_commands(session_name):
         "sleep 0.2; tmux capture-pane -t kpwn-debug:0.0; tmux show-buffer > ./exploit/tmux_buf.txt", "C-m"])
     with open("./exploit/tmux_buf.txt", "r") as f:
         file_data = f.read()
+    
     offset = file_data.find(f"cat /sys/module/")
     if offset == -1:
         print("[-] get section addr error")
@@ -221,11 +222,11 @@ def run_tmux_commands(session_name):
     print(f"[+] data addr: {data_addr}")
     print(f"[+] bss addr: {bss_addr}")
 
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
                     f"echo 'module text addr found: {text_addr}'", "C-m"])
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
                     f"echo 'module data addr found: {data_addr}'", "C-m"])
-    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
                     f"echo 'module bss addr found: {bss_addr}'", "C-m"])
 
     # # start gdb
