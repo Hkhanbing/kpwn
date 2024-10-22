@@ -171,9 +171,27 @@ def run_tmux_commands(session_name):
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
         "tmux show-buffer > ./exploit/tmux_buf.txt", "C-m"])
 
-    # 将结果赋值给变量
-    # lsmod_output = result.stdout.strip()
-    # print(f"[+] lsmod output:\n{lsmod_output}")
+    # read file && get offset
+    with open("./exploit/tmux_buf.txt", "r") as f:
+        file_data = f.read()
+
+    offset = file_data.find("lsmod")
+    if offset == -1:
+        print("[-] 未找到 lsmod")
+        return
+    next_offset = file_data.find("\n", offset) + 1
+    end = file_data.find("\n", next_offset)
+    module_data = file_data[next_offset: end].strip().split(" ")
+    if len(module_data) == 0:
+        print("[-] module solver error")
+        return
+    module_name = module_data[0]
+    module_addr = module_data[5]
+    print(f"[+] find module: {module_name}")
+    print(f"[+] module addr: {module_addr}")
+    subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
+                    f"echo 'module addr found: {module_name} {module_addr}'", "C-m"])
+
 
 def debug(break_point):
     print("[+] debug")
