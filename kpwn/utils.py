@@ -1,3 +1,5 @@
+import subprocess
+import sys
 # 检查文件类型的函数
 def check_file_type(filename):
     import magic  # 确保安装了python-magic库
