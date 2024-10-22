@@ -213,7 +213,7 @@ def switch():
     #print(file_data[setuidgid_offset+10: setuidgid_offset+10+setuidgid_end])
     file_data = file_data.replace(file_data[setuidgid_offset: setuidgid_offset+10+setuidgid_end], "setuidgid 0")
 
-    with open("./rootfs/init") as f:
+    with open("./rootfs/init", "w") as f:
         f.write(file_data)
     print("[+] change uid success")
     build_rootfs()
