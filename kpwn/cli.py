@@ -222,7 +222,7 @@ def main():
 
     # kpwn debug
     debug_parser = subparsers.add_parser('debug', help='kpwn debug')
-    debug_parser.add_argument('b', help='kpwn debug b 0x1234')
+    debug_parser.add_argument('b', nargs='?', default=None, help='kpwn debug b 0x1234')
 
     # 如果没有提供参数，则打印帮助信息
     if len(sys.argv) == 1:
