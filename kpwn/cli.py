@@ -193,7 +193,9 @@ def run_tmux_commands(session_name):
                     f"echo 'module addr found: {module_name} {module_addr}'", "C-m"])
     # next get section addr
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.0",
-                    f"cat /sys/module/{module_name}/sections/.text; cat /sys/module/{module_name}/sections/.data; cat /sys/module/{module_name}/sections/.bss;", 
+                    f"cat /sys/module/{module_name}/sections/.text; \
+                    cat /sys/module/{module_name}/sections/.data; \
+                    cat /sys/module/{module_name}/sections/.bss;", 
                     "C-m"])
     # get output
     subprocess.run(["tmux", "send-keys", "-t", f"{session_name}:0.1",
